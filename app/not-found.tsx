@@ -1,0 +1,1 @@
+export default function NotFound(){return <main className="auth-wrap"><section className="auth-card"><h1>Nie znaleziono strony</h1><p>Ten adres nie jest dostępny.</p><a className="button primary" href="/">Wróć do panelu</a></section></main>}
