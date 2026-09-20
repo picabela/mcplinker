@@ -151,7 +151,13 @@ Każde `post_create` wymaga stabilnego `dedupe_key`. Przy ponowieniu tego samego
 
 ## 9. Scheduler i automatyzacje
 
-Startowa konfiguracja jest raz dziennie o 06:00 UTC. Dla częstszych publikacji:
+Dla wdrożenia `https://mcplinker.vercel.app` skonfigurowano w projekcie Supabase `uhbwpdtmcawlrdkmqdgc` zadanie `mcplinker-worker-minute`, które sprawdza kolejkę co minutę. Wysyła żądanie do Vercel tylko wtedy, gdy istnieje zaległy wpis, przerwane wykonanie albo reguła automatyzacji do przetworzenia. Uruchomienie workera wymaga jeszcze importu zmiennych do Vercel, dodania klucza serwerowego Supabase i ponownego wdrożenia.
+
+Sekret workera jest w Supabase Vault pod nazwą `mcplinker_cron_secret` i odpowiada `CRON_SECRET` w przygotowanym prywatnym pliku importu. Zmieniając ten sekret w Vercel, zmień również wartość w Vault. Sekret w Vault jest niedostępny dla ról przeglądarki. Schemat `net` z nagłówkami kolejki HTTP nie jest udostępniony przez Data API (sprawdzono odpowiedź HTTP 406). Nie dodawaj `net` do Exposed schemas ani ścieżki wyszukiwania GraphQL; tabele rozszerzenia mają uprawnienia domyślne zarządzane przez Supabase. Historia uruchomień jest automatycznie czyszczona po 7 dniach. Sprawdzaj stan zadania w Supabase → Integrations → Cron; sukces zadania SQL oznacza zlecenie żądania, a wynik HTTP jest w `net._http_response`.
+
+Plik `supabase/scheduler.sql` zapisuje konfigurację bez sekretów. Dla innego wdrożenia: ustaw własny URL w pliku, dodaj odpowiedni sekret do Vault i wykonaj plik po `schema.sql`. Sam import schematu bazy nie instaluje schedulera. Częstotliwość co minutę nie gwarantuje publikacji w dokładnej sekundzie — czas zależy też od kolejki, dostępności usług i API platform.
+
+Zapasowa konfiguracja Vercel działa raz dziennie o 06:00 UTC. Alternatywy dla Supabase Cron:
 
 - Na planie Vercel obsługującym częstszy Cron zmień `schedule` w `vercel.json` na `* * * * *` i wdróż ponownie. Sprawdź warunki i koszt swojego planu.
 - Albo ustaw zewnętrzny scheduler wywołujący `POST https://TWOJA-DOMENA/api/cron` co minutę z nagłówkiem `Authorization: Bearer TWÓJ_CRON_SECRET`.
