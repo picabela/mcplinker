@@ -23,7 +23,7 @@ Dla innego, pustego projektu wykonaj `supabase/schema.sql` w SQL Editor lub jako
 W ustawieniach projektu znajdź:
 
 - publiczny klucz publishable / anon;
-- serwerowy klucz **legacy service_role**. Aktualna implementacja wysyła ten JWT jako `apikey` i Bearer do PostgREST; nie podstawiaj klucza `sb_secret_…` bez zmiany sposobu uwierzytelnienia w `lib/db.mjs`.
+- serwerowy klucz **Secret key** (`sb_secret_…`, zalecany) lub dotychczasowy JWT `service_role`. Oba formaty są obsługiwane. Mimo historycznej nazwy zmiennej nowy Secret key również wpisz do `SUPABASE_SERVICE_ROLE_KEY`. Nowy format jest wysyłany wyłącznie w nagłówku `apikey`; JWT również jako Bearer.
 
 Klucz serwerowy trafia wyłącznie do Vercel Environment Variables. Nie ustawiaj go pod nazwą z prefiksem `NEXT_PUBLIC_`.
 
@@ -39,7 +39,7 @@ Dodaj je w **Project → Settings → Environment Variables → Production**, na
 | `APP_OWNER_EMAIL` | Twój e-mail, którym zalogujesz się do panelu |
 | `SUPABASE_URL` | `https://uhbwpdtmcawlrdkmqdgc.supabase.co` |
 | `SUPABASE_PUBLISHABLE_KEY` | Klucz publiczny projektu Supabase |
-| `SUPABASE_SERVICE_ROLE_KEY` | Serwerowy JWT legacy service_role |
+| `SUPABASE_SERVICE_ROLE_KEY` | Serwerowy Secret key (`sb_secret_…`) lub JWT service_role |
 | `ENCRYPTION_KEY` | 64 znaki hex, wygenerowane losowo |
 | `CRON_SECRET` | Losowy długi sekret schedulera |
 | `META_API_VERSION` | Wersja API dostępna dla Twojej aplikacji Meta; startowo `v25.0`, potwierdź w jej panelu |
