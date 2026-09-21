@@ -67,12 +67,12 @@ create table public.oauth_clients (
 create table public.oauth_codes (
  code_hash text primary key, client_id uuid not null references public.oauth_clients(client_id),
  owner_id uuid not null references auth.users(id) on delete cascade, redirect_uri text not null, challenge text not null, resource text not null,
- scopes text[] not null, brand_ids uuid[] not null, expires_at timestamptz not null, consumed_at timestamptz
+ scopes text[] not null, brand_ids uuid[] not null, all_brands boolean not null default false, expires_at timestamptz not null, consumed_at timestamptz
 );
 create table public.oauth_grants (
  id uuid primary key default gen_random_uuid(), owner_id uuid not null references auth.users(id) on delete cascade,
  client_id uuid not null references public.oauth_clients(client_id), access_hash text not null unique, refresh_hash text not null unique,
- resource text not null, scopes text[] not null, brand_ids uuid[] not null, expires_at timestamptz not null, refresh_expires_at timestamptz not null,
+ resource text not null, scopes text[] not null, brand_ids uuid[] not null, all_brands boolean not null default false, expires_at timestamptz not null, refresh_expires_at timestamptz not null,
  revoked_at timestamptz, created_at timestamptz not null default now()
 );
 create table public.rate_buckets (key text primary key, hits integer not null, reset_at timestamptz not null);

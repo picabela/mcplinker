@@ -189,3 +189,13 @@ Te kroki wymagają rzeczywistych kont i nie są zastępowane testami jednostkowy
 - [LinkedIn Images API](https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/images-api?view=li-lms-2026-09)
 - [LinkedIn — wersjonowanie API](https://learn.microsoft.com/en-us/linkedin/marketing/versioning?view=li-lms-2026-09)
 - [Meta — Graph API](https://developers.facebook.com/docs/graph-api/)
+
+## Nowe marki bez ponownego łączenia ChatGPT
+
+W **Agenci i MCP → Autoryzacje ChatGPT → Zmień marki** można zmienić dostęp istniejącego połączenia. Włącz **Wszystkie obecne i przyszłe marki** i zapisz. Ta sama opcja jest dostępna na ekranie zgody OAuth podczas pierwszego łączenia. Domyślnie pozostaje wyłączona.
+
+Po włączeniu nowe marki i ich połączone konta są dostępne przy następnym wywołaniu narzędzi. W rozmowie poproś agenta o ponowne pobranie listy marek (`brand_list`) i kont (`connection_list`); nie trzeba odłączać wtyczki ani odświeżać katalogu narzędzi. Dodanie konta do już udostępnionej marki również nie wymaga ponownej autoryzacji.
+
+Możesz zamiast tego zaznaczać pojedyncze marki lub później ograniczyć dostęp. Zmiana dotyczy wybranego połączenia OAuth, zachowuje jego uprawnienia do działań i terminy ważności. Działa również po odświeżeniu tokenu. Wygasłą lub odwołaną autoryzację nadal trzeba połączyć ponownie. Tokeny Bearer tworzone ręcznie zachowują wybrane marki.
+
+Przy aktualizacji starszej instalacji najpierw zastosuj migrację `oauth_all_brands` z katalogu `supabase/migrations`, następnie wdróż aplikację. Migracja dodaje do `oauth_codes` i `oauth_grants` pole `all_brands` z domyślną wartością `false`. Nie zmienia dostępu istniejących połączeń. Nowe instalacje korzystają z uaktualnionego `supabase/schema.sql`.
