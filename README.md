@@ -11,7 +11,7 @@ Panel w języku polskim i zdalny serwer MCP do pracy z wieloma markami, stronami
 - Szkice dla kilku kanałów, edytor, kalendarz, zatwierdzanie, harmonogram, publikacja teraz, anulowanie i historia działań.
 - Facebook Pages: tekst, link, zdjęcia, zwykłe wideo, odczyt wpisów i komentarzy, komentarze, usuwanie własnych wpisów oraz dostępne metryki.
 - LinkedIn: publikacje osoby/organizacji, obrazy przez Images API, artykuły/linki, komentarze i statystyki organizacji zależnie od zatwierdzonych produktów API.
-- WordPress: wpisy, strony, obrazy, kategorie, tagi, komentarze, pola REST, data publikacji oraz administracja udostępniona przez core REST API.
+- WordPress: wpisy, strony, obrazy, kategorie, tagi, komentarze, pola REST, data publikacji oraz administracja przez REST API rdzenia i wtyczek. Rank Math: zapis Focus Keyword, SEO Title i Meta Description; wykrywanie endpointów i schematów API.
 - Reguły RSS → szkice i WordPress → szkice w wybranych kanałach; deduplikacja elementów źródła.
 - Biblioteka publicznych odnośników do mediów oraz eksport danych bez sekretów.
 - MCP przez stateless Streamable HTTP, OAuth z PKCE S256, ograniczone tokeny Bearer, wybór marek i zakresów dostępu, odwoływanie autoryzacji.

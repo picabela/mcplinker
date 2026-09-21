@@ -85,7 +85,7 @@ Polityka akceptacji dotyczy kolejki wpisów. Publiczne komentarze z zakresem `en
 
 Podkatalogi są obsługiwane, np. `https://domena.pl/blog`. Podaj adres docelowy po przekierowaniach, z właściwym `www` lub bez niego. Połączenia nie podążają za przekierowaniami z hasłem.
 
-Zwykłe publikowanie wymaga uprawnień do edycji/publikowania wpisów; administracja użytkownikami, ustawieniami czy wtyczkami wymaga dodatkowych uprawnień WordPress. Pola SEO są dostępne tylko wtedy, gdy dana wtyczka wystawia je przez REST API. Narzędzie administracyjne w tej wersji obsługuje dozwolone zasoby `wp/v2`, bez arbitralnych endpointów wtyczek.
+Zwykłe publikowanie wymaga uprawnień do edycji/publikowania wpisów; administracja użytkownikami, ustawieniami czy wtyczkami wymaga dodatkowych uprawnień WordPress. Dostęp do rozszerzonego API i SEO wymaga zakresu MCP `admin`. `wordpress_request` obsługuje również endpointy aktywnych wtyczek. Opis, przykłady Rank Math i sposób wykrywania operacji: [WORDPRESS.md](WORDPRESS.md).
 
 ## 6. Facebook Pages
 
@@ -134,7 +134,7 @@ Wybierz OAuth. Serwer udostępnia metadane, dynamiczną rejestrację klienta i P
 | `publish` | Planowanie, publikowanie i anulowanie zgodnie z polityką marki |
 | `engage` | Natychmiastowe komentarze publiczne |
 | `manage` | Tworzenie i przełączanie automatyzacji |
-| `admin` | Natychmiastowe operacje core REST WordPress i usuwanie opublikowanych wpisów |
+| `admin` | Natychmiastowe operacje REST WordPress i wtyczek, SEO Rank Math oraz usuwanie opublikowanych wpisów |
 
 Tworzenie marek, podłączanie kont, ręczna akceptacja, zarządzanie sekretami oraz wydawanie tokenów pozostają operacjami panelu właściciela. Nadanie zakresu `admin` agentowi nie umożliwia uzyskania tokenów platform.
 

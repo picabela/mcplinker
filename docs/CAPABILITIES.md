@@ -26,9 +26,9 @@ Nie ma prywatnych wiadomości, zaproszeń, scrapowania kontaktów, wyszukiwania 
 
 ## WordPress
 
-Odczyty wpisów, stron, mediów, komentarzy, kategorii i tagów; publikowanie wpisów i stron; HTML treści; obraz wyróżniający; upload obrazów; slug; excerpt; kategorie; tagi; pola `meta` wystawione przez REST API; data `date_gmt`. Narzędzie `wordpress_request` obsługuje dozwolone zasoby core REST API i metody GET/POST/PUT/PATCH/DELETE.
+Odczyty wpisów, stron, mediów, komentarzy, kategorii i tagów; publikowanie wpisów i stron; HTML treści; obraz wyróżniający; upload obrazów; slug; excerpt; kategorie; tagi; pola `meta` wystawione przez REST API; data `date_gmt`. Narzędzie `wordpress_request` obsługuje REST API rdzenia i dowolnych zainstalowanych wtyczek oraz metody GET/POST/PUT/PATCH/DELETE/OPTIONS. `wordpress_discover` wykrywa namespace, trasy, metody i schematy parametrów z filtrowaniem i stronicowaniem. `wordpress_rankmath_update` zapisuje Focus Keyword, SEO Title i Meta Description przez natywny endpoint Rank Math.
 
-Administracyjne działania zależą od uprawnień użytkownika WordPress i tego, co dana wersja WordPress udostępnia przez REST. To nie jest powłoka serwera ani klient FTP. Nie ma dowolnej edycji plików motywu, aktualizacji rdzenia, pełnych backupów witryny ani arbitralnych endpointów wtyczek. Wybrane operacje na wtyczkach, motywach, użytkownikach, menu i szablonach działają tylko w zakresie core REST API. Liczba opublikowanych wpisów nie jest statystyką ruchu.
+Administracyjne działania zależą od uprawnień użytkownika WordPress i tego, co dana wersja WordPress udostępnia przez REST. To nie jest powłoka serwera ani klient FTP. Nie ma bezpośredniej edycji plików motywu, aktualizacji rdzenia ani pełnych backupów witryny. Mogą je udostępniać dodatkowe wtyczki z własnym API. Dostępne są endpointy zainstalowanych rozszerzeń (np. Rank Math, WooCommerce, ACF), własne typy treści, widgety, style globalne, menu i szablony, o ile witryna je udostępnia i konto ma odpowiednie prawa. Każde wywołanie pozostaje w `/wp-json/` połączonej witryny. Dostęp do rozszerzonego API i SEO wymaga zakresu MCP `admin`. Liczba opublikowanych wpisów nie jest statystyką ruchu.
 
 ## Ograniczenia techniczne
 
@@ -44,7 +44,7 @@ Startowy worker uruchamia się raz dziennie. Dokładniejszy harmonogram i więks
 4. Historia metryk, raporty marek, rekomendacje pór publikacji i porównywanie treści.
 5. Role zespołowe: autor, recenzent, administrator; powiadomienia o szkicach do akceptacji.
 6. Dodatkowe adaptery dla zatwierdzonych produktów Meta i LinkedIn, w tym Reels/Stories, jeśli konto i API je udostępniają.
-7. Integracje GA4/GSC i właściwe endpointy wtyczek SEO WordPress.
+7. Integracje GA4/GSC, weryfikacja i porównywanie wyników SEO.
 8. Harmonogram pracy agentów z generowaniem treści, kosztami modelu i wyraźnymi zasadami publikowania.
 
 Ta lista opisuje dalszy rozwój, a nie funkcje już działające.

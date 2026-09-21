@@ -5,6 +5,7 @@
 - Next.js App Router: panel, logowanie i formularz zgody OAuth.
 - `lib/actions.mjs`: wspólny rejestr operacji, schematy Zod, kontrola zakresów i marek, dziennik działań.
 - `lib/providers.mjs`: adaptery oficjalnych API Facebook, LinkedIn i WordPress.
+- `lib/wordpress-rest.mjs`: walidacja ścieżek REST, indeks endpointów, obsługa błędów i kontrakt zapisu Rank Math. Zakres admin pozwala wywoływać namespace zainstalowanych wtyczek, zawsze wewnątrz katalogu wp-json danej witryny.
 - `lib/mcp.mjs`: bezstanowy transport JSON-RPC przez HTTP, negocjacja wersji, lista i wykonywanie narzędzi.
 - `lib/oauth.mjs`: metadane, rejestracja klienta, zgoda, authorization code, PKCE, obrót refresh tokenów i revocation.
 - `lib/provider-oauth.mjs`: OAuth Meta/LinkedIn do podłączenia kont właściciela.
