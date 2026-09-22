@@ -49,3 +49,7 @@ Startowe `vercel.json` uruchamia `/api/cron` **raz dziennie o 06:00 UTC**. Zapla
 To działająca implementacja funkcji wymienionych powyżej, wymagająca konfiguracji i odbioru na realnych kontach. Nie jest pełną kopią Metricool. Reels, Stories, reklamy, prywatne wiadomości, grupy Facebook i zaproszenia LinkedIn nie są zaimplementowane. Nie ma automatycznego obchodzenia limitów, App Review ani zgód platform. Aplikacja nie uruchamia samodzielnie modelu AI — treść opracowuje ChatGPT przez MCP, a reguły serwera używają szablonów.
 
 Panel ma jednego właściciela wskazanego przez `APP_OWNER_EMAIL`; marki i agenci są rozdzieleni uprawnieniami. Role wielu użytkowników nie są częścią tej wersji.
+
+## Nowe platformy i kalendarz
+
+Instagram, Telegram i Mastodon oraz przesuwanie terminów publikacji: [instrukcja konfiguracji](docs/PLATFORMS.md).

@@ -9,7 +9,7 @@ create table public.brands (
 );
 create table public.connections (
  id uuid primary key default gen_random_uuid(), owner_id uuid not null references auth.users(id) on delete cascade,
- brand_id uuid not null, platform text not null check(platform in ('facebook','linkedin','wordpress')),
+ brand_id uuid not null, platform text not null check(platform in ('facebook','linkedin','wordpress','instagram','telegram','mastodon')),
  name text not null, external_id text not null, base_url text, credentials text not null,
  scopes text[] not null default '{}', status text not null default 'connected', expires_at timestamptz,
  last_checked_at timestamptz, created_at timestamptz not null default now(),

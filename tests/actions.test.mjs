@@ -21,3 +21,16 @@ test('revoked and expired Bearer tokens cannot authenticate',async()=>{const tok
 test('OAuth access is bound to this MCP resource',async()=>{const token='oauth-test';tables.oauth_grants.push({id:randomUUID(),access_hash:hash(token),owner_id:owner,brand_ids:[brand],scopes:['read'],expires_at:new Date(Date.now()+60000).toISOString(),revoked_at:null,resource:'https://another.example.com/mcp'});await assert.rejects(()=>context(new Request('https://app.example.com/mcp',{headers:{Authorization:'Bearer '+token}}),{mcp:true}),e=>e.status===401);});
 
 test('a stale panel cannot approve or overwrite a newer draft',async()=>{const p=await execute('post_create',input(),ctx);const changed=await execute('post_update',{id:p.id,expected_updated_at:p.updated_at,title:'Changed',content:'New content',payload:{}},ctx);assert.notEqual(changed.updated_at,p.updated_at);await assert.rejects(()=>execute('post_approve',{id:p.id,expected_updated_at:p.updated_at},ctx),e=>e.status===409);await assert.rejects(()=>execute('post_update',{id:p.id,expected_updated_at:p.updated_at,title:'Stale',content:'Old content',payload:{}},ctx),e=>e.status===409);});
+
+test('reschedule preserves approval and rejects stale, past, unauthorized and in-flight changes',async()=>{
+ let p=await execute('post_create',input(),ctx);const future=new Date(Date.now()+86400000).toISOString();
+ p=await execute('post_reschedule',{id:p.id,expected_updated_at:p.updated_at,scheduled_at:future},ctx);assert.equal(p.status,'approval');assert.equal(p.approved_at,null);
+ p=await execute('post_approve',{id:p.id,expected_updated_at:p.updated_at},ctx);const approved=p.approved_at;
+ p=await execute('post_reschedule',{id:p.id,expected_updated_at:p.updated_at,scheduled_at:future},ctx);assert.equal(p.status,'scheduled');assert.equal(p.approved_at,approved);
+ const args={id:p.id,expected_updated_at:p.updated_at,scheduled_at:new Date(Date.now()+172800000).toISOString()};
+ await assert.rejects(()=>execute('post_reschedule',args,{...ctx,actor:'agent',brandIds:[other]}),e=>e.status===403);
+ await assert.rejects(()=>execute('post_reschedule',{...args,scheduled_at:'2000-01-01T00:00:00Z'},ctx));
+ await assert.rejects(()=>execute('post_reschedule',{...args,expected_updated_at:'2000-01-01T00:00:00Z'},ctx),e=>e.status===409);
+ for(const status of ['processing','published','uncertain']){tables.posts.find(x=>x.id===p.id).status=status;await assert.rejects(()=>execute('post_reschedule',args,ctx),e=>e.status===409);}
+ assert.equal(tables.posts.find(x=>x.id===p.id).scheduled_at,future);
+});
