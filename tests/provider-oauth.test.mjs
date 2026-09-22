@@ -14,3 +14,5 @@ test('LinkedIn OAuth keeps its space-delimited scope list',()=>{
  assert.equal(url.searchParams.get('scope'),'openid profile w_member_social');
  assert.equal(url.searchParams.get('config_id'),null);
 });
+
+test('Business configuration uses minimal login parameters',()=>{const url=providerAuthorizationUrl('facebook',{client_id:'1',config_id:'22',scopes:[]},'https://app.example.com/callback','state');assert.equal(url.searchParams.has('auth_type'),false);assert.equal(url.searchParams.get('config_id'),'22');});
