@@ -11,6 +11,7 @@ process.env.SUPABASE_URL='https://database.example.com';
 process.env.SUPABASE_SERVICE_ROLE_KEY='test-only';
 process.env.APP_URL='https://app.example.com';
 process.env.APP_OWNER_EMAIL='owner@example.com';
+process.env.ENCRYPTION_KEY='ab'.repeat(32);
 const owner=randomUUID(),otherOwner=randomUUID(),brand=randomUUID(),foreign=randomUUID(),client=randomUUID();
 const panel={ownerId:owner,actor:'panel',scopes:['read','admin','manage'],brandIds:null};
 const redirect='https://chatgpt.com/connector_platform_oauth_redirect',resource=process.env.APP_URL+'/mcp';
@@ -88,8 +89,28 @@ test('all-brand mode does not apply to API keys or add operation scopes',async()
  const ctx=await authenticated(g.token);
  await assert.rejects(()=>execute('wordpress_request',{connection_id:randomUUID(),path:'wp/v2/posts'},ctx),e=>e.status===403);
 });
-function approval(input){const query=new URLSearchParams({client_id:client,redirect_uri:redirect,response_type:'code',code_challenge_method:'S256',code_challenge:challenge('v'.repeat(50)),resource,state:'s'.repeat(32),scope:'read'}).toString();return handleOAuth(new Request(process.env.APP_URL+'/oauth/approve',{method:'POST',headers:{'Content-Type':'application/json',Origin:process.env.APP_URL,Cookie:'sp_access=test-session'},body:JSON.stringify({query,...input})}));}
-function tokenRequest(input){return handleOAuth(new Request(process.env.APP_URL+'/oauth/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:client,resource,...input})}));}
+function approval(input,params={}){const query=new URLSearchParams({client_id:client,redirect_uri:redirect,response_type:'code',code_challenge_method:'S256',code_challenge:challenge('v'.repeat(50)),resource,state:'s'.repeat(32),scope:'read',...params}).toString();return handleOAuth(new Request(process.env.APP_URL+'/oauth/approve',{method:'POST',headers:{'Content-Type':'application/json',Origin:process.env.APP_URL,Cookie:'sp_access=test-session'},body:JSON.stringify({query,...input})}));}
+function tokenRequest(input,headers={}){return handleOAuth(new Request(process.env.APP_URL+'/oauth/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded',...headers},body:new URLSearchParams({client_id:client,resource,...input})}));}
+const claudeCallback='https://claude.ai/api/mcp/auth_callback';
+function register(input){return handleOAuth(new Request(process.env.APP_URL+'/oauth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({client_name:'claudeai',grant_types:['authorization_code','refresh_token'],response_types:['code'],token_endpoint_auth_method:'client_secret_post',scope:'claudeai',redirect_uris:[claudeCallback],...input})}));}
+test('Claude registers a confidential client, then exchanges and refreshes with its secret',async()=>{
+ const registered=await register({});assert.equal(registered.status,201);
+ const c=await registered.json();assert.equal(c.token_endpoint_auth_method,'client_secret_post');assert.ok(c.client_secret);
+ const approve=await approval({brand_ids:[brand]},{client_id:c.client_id,redirect_uri:claudeCallback,scope:'claudeai'});assert.equal(approve.status,200);
+ assert.deepEqual(tables.oauth_codes.at(-1).scopes,['read','draft']);
+ const code=new URL((await approve.json()).redirect).searchParams.get('code');
+ const exchange=await tokenRequest({client_id:c.client_id,client_secret:c.client_secret,grant_type:'authorization_code',code,code_verifier:'v'.repeat(50),redirect_uri:claudeCallback});assert.equal(exchange.status,200);
+ const tokens=await exchange.json();assert.equal(tokens.scope,'read draft');assert.deepEqual(await brandsFor(tokens.access_token),[brand]);
+ const basic='Basic '+Buffer.from(c.client_id+':'+c.client_secret).toString('base64');
+ const refreshed=await tokenRequest({client_id:'',grant_type:'refresh_token',refresh_token:tokens.refresh_token},{Authorization:basic});assert.equal(refreshed.status,200);
+});
+test('OAuth clients cannot register foreign callbacks or use another client secret',async()=>{
+ assert.equal((await register({redirect_uris:['https://claude.ai.evil.example/api/mcp/auth_callback']})).status,400);
+ const publicClient=await(await register({token_endpoint_auth_method:'none'})).json();assert.equal(publicClient.client_secret,undefined);
+ const other=await(await register({})).json();
+ const denied=await tokenRequest({client_id:publicClient.client_id,client_secret:other.client_secret,grant_type:'refresh_token',refresh_token:'x'});
+ assert.equal(denied.status,401);assert.equal((await denied.json()).error,'invalid_client');
+});
 test('explicit OAuth consent survives code exchange and refresh; changing access survives refresh too',async()=>{
  tables.brands=[];
  const approve=await approval({all_brands:true,brand_ids:[]});assert.equal(approve.status,200);
