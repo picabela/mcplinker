@@ -111,6 +111,26 @@ test('OAuth clients cannot register foreign callbacks or use another client secr
  const denied=await tokenRequest({client_id:publicClient.client_id,client_secret:other.client_secret,grant_type:'refresh_token',refresh_token:'x'});
  assert.equal(denied.status,401);assert.equal((await denied.json()).error,'invalid_client');
 });
+test('the owner can grant Claude more scopes than it requested, including publish',async()=>{
+ assert.equal((await approval({brand_ids:[brand],scopes:[]})).status,400);
+ assert.equal((await approval({brand_ids:[brand],scopes:['root']})).status,400);
+ const approve=await approval({brand_ids:[brand],scopes:['admin','read','publish','publish']});assert.equal(approve.status,200);
+ assert.deepEqual(tables.oauth_codes.at(-1).scopes,['read','publish','admin']);
+ const code=new URL((await approve.json()).redirect).searchParams.get('code');
+ const tokens=await(await tokenRequest({grant_type:'authorization_code',code,code_verifier:'v'.repeat(50),redirect_uri:redirect})).json();
+ assert.equal(tokens.scope,'read publish admin');assert.ok(catalog(await authenticated(tokens.access_token)).some(t=>t.name==='post_publish'));
+});
+test('panel changes the scopes of an existing OAuth grant without reconnecting',async()=>{
+ const g=grant({scopes:['read']});
+ assert.ok(!catalog(await authenticated(g.token)).some(t=>t.name==='post_publish'));
+ assert.deepEqual((await execute('grant_update_scopes',{id:g.row.id,scopes:['publish','read','draft']},panel)).scopes,['read','draft','publish']);
+ assert.ok(catalog(await authenticated(g.token)).some(t=>t.name==='post_publish'));
+ await assert.rejects(()=>execute('grant_update_scopes',{id:g.row.id,scopes:[]},panel),e=>e.status===400);
+ await assert.rejects(()=>execute('grant_update_scopes',{id:g.row.id,scopes:['admin']},{...panel,actor:'oauth_grants:'+g.row.id}),e=>e.status===403);
+ await assert.rejects(()=>execute('grant_update_scopes',{id:g.row.id,scopes:['admin']},{...panel,ownerId:otherOwner}),e=>e.status===404);
+ g.row.revoked_at=new Date().toISOString();
+ await assert.rejects(()=>execute('grant_update_scopes',{id:g.row.id,scopes:['admin']},panel),e=>e.status===409);
+});
 test('explicit OAuth consent survives code exchange and refresh; changing access survives refresh too',async()=>{
  tables.brands=[];
  const approve=await approval({all_brands:true,brand_ids:[]});assert.equal(approve.status,200);

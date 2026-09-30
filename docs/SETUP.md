@@ -129,7 +129,7 @@ https://TWOJA-DOMENA/mcp
 
 Wybierz OAuth. Serwer udostępnia metadane, dynamiczną rejestrację klienta i PKCE S256. Zaloguj się do MCPLinker i wybierz marki. Zacznij od `read draft`; dodaj `publish`, gdy chcesz planowania i publikacji. Sam klient ChatGPT może stosować dodatkowe potwierdzenia operacji.
 
-W Claude otwórz **Settings → Connectors → Add custom connector**, podaj ten sam adres `/mcp` i w **Advanced settings** zostaw puste pola OAuth Client ID oraz OAuth Client Secret. Claude zarejestruje się sam przez `/oauth/register`. Na ekranie zgody MCPLinker wybierz marki. Claude otrzymuje zakresy, o które prosi; gdy nie poda znanego zakresu, dostaje `read draft`. Klient Claude może otrzymać `client_secret`; jest on wyprowadzony z `ENCRYPTION_KEY`, więc zmiana tego klucza wymaga ponownego połączenia Claude.
+W Claude otwórz **Settings → Connectors → Add custom connector**, podaj ten sam adres `/mcp` i w **Advanced settings** zostaw puste pola OAuth Client ID oraz OAuth Client Secret. Claude zarejestruje się sam przez `/oauth/register`. Na ekranie zgody MCPLinker zaznaczone są uprawnienia, o które prosi klient (dla Claude zwykle `read draft`). Aby Claude mógł wszystko, w tym publikować, zaznacz **Pełny dostęp: wszystkie uprawnienia** albo wybrane zakresy, np. `publish`, i wybierz marki. Uprawnienia istniejącego połączenia zmienisz bez ponownego łączenia: **Agenci i MCP → Autoryzacje OAuth → Zmień uprawnienia**. Publikacja bez ręcznej akceptacji wymaga dodatkowo w profilu marki ustawienia **Zezwalaj agentom z uprawnieniem publish**. Klient Claude może otrzymać `client_secret`; jest on wyprowadzony z `ENCRYPTION_KEY`, więc zmiana tego klucza wymaga ponownego połączenia Claude.
 
 | Zakres | Dostęp |
 | --- | --- |
