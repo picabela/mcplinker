@@ -44,7 +44,7 @@ Dodaj je w **Project → Settings → Environment Variables → Production**, na
 | `CRON_SECRET` | Losowy długi sekret schedulera |
 | `META_API_VERSION` | Wersja API dostępna dla Twojej aplikacji Meta; startowo `v25.0`, potwierdź w jej panelu |
 | `LINKEDIN_API_VERSION` | Startowo `202609`; aktualizuj przed wycofaniem wersji |
-| `MCP_ALLOWED_REDIRECT_URIS` | Dokładne dozwolone callbacki ChatGPT, rozdzielone przecinkami |
+| `MCP_ALLOWED_REDIRECT_URIS` | Opcjonalne dodatkowe callbacki klientów MCP, rozdzielone przecinkami; callbacki ChatGPT i Claude są wbudowane |
 | `WORDPRESS_ALLOWED_HOSTS` | Opcjonalna lista dozwolonych domen WordPress, rozdzielona przecinkami |
 
 Generowanie wartości lokalnie, każda komenda osobno:
@@ -59,13 +59,15 @@ node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('b
 
 Pierwszy wynik to `ENCRYPTION_KEY`, drugi to `CRON_SECRET`. Zapisz je również w menedżerze haseł. Utrata lub prosta zmiana `ENCRYPTION_KEY` uniemożliwi odczyt istniejących poświadczeń; rotacja wymaga ich ponownego zaszyfrowania albo ponownego podłączenia kont.
 
-Startowy callback ChatGPT:
+Wbudowane callbacki ChatGPT i Claude, dozwolone zawsze, także gdy zmienna zawiera inne adresy:
 
 ```text
 https://chatgpt.com/connector_platform_oauth_redirect
+https://claude.ai/api/mcp/auth_callback
+https://claude.com/api/mcp/auth_callback
 ```
 
-Jeśli Twój klient pokazuje inny callback, dodaj **dokładnie ten adres** do listy. Nie używaj wildcardów ani samych prefiksów domeny.
+Jeśli inny klient pokazuje inny callback, dodaj **dokładnie ten adres** do `MCP_ALLOWED_REDIRECT_URIS`. Nie używaj wildcardów ani samych prefiksów domeny.
 
 ## 4. Konto właściciela i marki
 
@@ -117,7 +119,7 @@ Organizacje można dodać za pomocą tokenu i `urn:li:organization:ID`. Publikac
 
 Obraz można przesłać narzędziem `linkedin_upload_image`; otrzymany `media_urn` dodaj do payload szkicu. LinkedIn przetwarza obrazy asynchronicznie. Wideo i dokumenty wymagają wcześniejszego uzyskania URN przez odpowiednie API poza tą wersją aplikacji. Odnowienie wygasłego dostępu wykonuje się przez ponowne połączenie; automatyczne odświeżanie tokenów platform nie jest jeszcze zaimplementowane.
 
-## 8. ChatGPT i MCP
+## 8. ChatGPT, Claude i MCP
 
 W ChatGPT włącz możliwość dodawania własnych aplikacji / tryb deweloperski, jeżeli udostępnia go Twój plan i administrator obszaru roboczego. Utwórz połączenie do:
 
@@ -126,6 +128,8 @@ https://TWOJA-DOMENA/mcp
 ```
 
 Wybierz OAuth. Serwer udostępnia metadane, dynamiczną rejestrację klienta i PKCE S256. Zaloguj się do MCPLinker i wybierz marki. Zacznij od `read draft`; dodaj `publish`, gdy chcesz planowania i publikacji. Sam klient ChatGPT może stosować dodatkowe potwierdzenia operacji.
+
+W Claude otwórz **Settings → Connectors → Add custom connector**, podaj ten sam adres `/mcp` i w **Advanced settings** zostaw puste pola OAuth Client ID oraz OAuth Client Secret. Claude zarejestruje się sam przez `/oauth/register`. Na ekranie zgody MCPLinker zaznaczone są uprawnienia, o które prosi klient (dla Claude zwykle `read draft`). Aby Claude mógł wszystko, w tym publikować, zaznacz **Pełny dostęp: wszystkie uprawnienia** albo wybrane zakresy, np. `publish`, i wybierz marki. Uprawnienia istniejącego połączenia zmienisz bez ponownego łączenia: **Agenci i MCP → Autoryzacje OAuth → Zmień uprawnienia**. Publikacja bez ręcznej akceptacji wymaga dodatkowo w profilu marki ustawienia **Zezwalaj agentom z uprawnieniem publish**. Klient Claude może otrzymać `client_secret`; jest on wyprowadzony z `ENCRYPTION_KEY`, więc zmiana tego klucza wymaga ponownego połączenia Claude.
 
 | Zakres | Dostęp |
 | --- | --- |
