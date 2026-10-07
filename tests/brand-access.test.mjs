@@ -15,8 +15,9 @@ process.env.ENCRYPTION_KEY='ab'.repeat(32);
 const owner=randomUUID(),otherOwner=randomUUID(),brand=randomUUID(),foreign=randomUUID(),client=randomUUID();
 const panel={ownerId:owner,actor:'panel',scopes:['read','admin','manage'],brandIds:null};
 const redirect='https://chatgpt.com/connector_platform_oauth_redirect',resource=process.env.APP_URL+'/mcp';
-let tables;
+let tables,hits;
 beforeEach(()=>{
+ hits={};
  tables={brands:[{id:brand,owner_id:owner,name:'First'},{id:foreign,owner_id:otherOwner,name:'Other owner'}],connections:[],oauth_grants:[],oauth_codes:[],api_keys:[],audit_log:[],oauth_clients:[{client_id:client,redirect_uris:[redirect],client_name:'ChatGPT'}]};
 });
 function matches(row,params){for(const[k,v]of params){if(v.startsWith('eq.')&&String(row[k])!==v.slice(3))return false;if(v==='is.null'&&row[k]!=null)return false;if(v.startsWith('gt.')&&!(row[k]>v.slice(3)))return false;if(v.startsWith('in.')&&!v.slice(4,-1).split(',').includes(row[k]))return false;}return true;}
@@ -24,7 +25,7 @@ globalThis.fetch=async(url,options={})=>{
  const u=new URL(url),table=u.pathname.split('/').pop(),args=options.body?JSON.parse(options.body):null;
  let result;
  if(u.pathname==='/auth/v1/user')return Response.json({id:owner,email:process.env.APP_OWNER_EMAIL});
- if(table==='take_rate')return Response.json(true);
+ if(table==='take_rate'){hits[args.p_key]=(hits[args.p_key]||0)+1;return Response.json(hits[args.p_key]<=args.p_limit);}
  if(table==='consume_oauth_code'){
   result=tables.oauth_codes.filter(c=>c.code_hash===args.p_hash&&c.client_id===args.p_client&&c.redirect_uri===args.p_redirect&&c.challenge===args.p_challenge&&c.resource===args.p_resource&&!c.consumed_at);
   result.forEach(c=>c.consumed_at=new Date().toISOString());
@@ -92,7 +93,7 @@ test('all-brand mode does not apply to API keys or add operation scopes',async()
 function approval(input,params={}){const query=new URLSearchParams({client_id:client,redirect_uri:redirect,response_type:'code',code_challenge_method:'S256',code_challenge:challenge('v'.repeat(50)),resource,state:'s'.repeat(32),scope:'read',...params}).toString();return handleOAuth(new Request(process.env.APP_URL+'/oauth/approve',{method:'POST',headers:{'Content-Type':'application/json',Origin:process.env.APP_URL,Cookie:'sp_access=test-session'},body:JSON.stringify({query,...input})}));}
 function tokenRequest(input,headers={}){return handleOAuth(new Request(process.env.APP_URL+'/oauth/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded',...headers},body:new URLSearchParams({client_id:client,resource,...input})}));}
 const claudeCallback='https://claude.ai/api/mcp/auth_callback';
-function register(input){return handleOAuth(new Request(process.env.APP_URL+'/oauth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({client_name:'claudeai',grant_types:['authorization_code','refresh_token'],response_types:['code'],token_endpoint_auth_method:'client_secret_post',scope:'claudeai',redirect_uris:[claudeCallback],...input})}));}
+function register(input,ip='198.51.100.7'){return handleOAuth(new Request(process.env.APP_URL+'/oauth/register',{method:'POST',headers:{'Content-Type':'application/json','X-Real-IP':ip},body:JSON.stringify({client_name:'claudeai',grant_types:['authorization_code','refresh_token'],response_types:['code'],token_endpoint_auth_method:'client_secret_post',scope:'claudeai',redirect_uris:[claudeCallback],...input})}));}
 test('Claude registers a confidential client, then exchanges and refreshes with its secret',async()=>{
  const registered=await register({});assert.equal(registered.status,201);
  const c=await registered.json();assert.equal(c.token_endpoint_auth_method,'client_secret_post');assert.ok(c.client_secret);
@@ -151,4 +152,18 @@ test('OAuth consent defaults to selected brands and rejects empty or foreign sel
  assert.equal((await approval({brand_ids:[brand]})).status,200);
  assert.equal(tables.oauth_codes.at(-1).all_brands,false);
  assert.deepEqual(tables.oauth_codes.at(-1).brand_ids,[brand]);
+});
+
+test('one address cannot exhaust client registration for everyone',async()=>{
+ for(let n=0;n<20;n++)assert.equal((await register({},'203.0.113.9')).status,201);
+ assert.equal((await register({},'203.0.113.9')).status,429);
+ assert.equal((await register({},'203.0.113.10')).status,201);
+});
+test('refreshing extends an active grant, but never past a year after consent',async()=>{
+ const day=86400000,refresh=randomUUID();
+ const active=grant({created_at:new Date(Date.now()-10*day).toISOString(),refresh_hash:hash(refresh),refresh_expires_at:new Date(Date.now()+day).toISOString()});
+ const r=await tokenRequest({grant_type:'refresh_token',refresh_token:refresh});assert.equal(r.status,200);
+ assert.ok(Date.parse(active.row.refresh_expires_at)>Date.now()+29*day);
+ const old=randomUUID(),capped=grant({created_at:new Date(Date.now()-400*day).toISOString(),refresh_hash:hash(old),refresh_expires_at:new Date(Date.now()+day).toISOString()});const before=capped.row.refresh_expires_at;
+ assert.equal((await tokenRequest({grant_type:'refresh_token',refresh_token:old})).status,200);assert.equal(capped.row.refresh_expires_at,before);
 });

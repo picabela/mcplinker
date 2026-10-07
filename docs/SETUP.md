@@ -77,6 +77,15 @@ Dodaj pierwszą markę. Opis stylu służy agentom do dopasowania tekstu. Nowa m
 
 Polityka akceptacji dotyczy kolejki wpisów. Publiczne komentarze z zakresem `engage` i administracyjne zapisy WordPress z zakresem `admin` działają natychmiast.
 
+W panelu (Publikacje, Kalendarz albo okno szczegółów wpisu) możesz ręcznie obsłużyć każdy szkic lub zaplanowany wpis przygotowany przez agenta:
+
+- **Opublikuj teraz**: także dla wpisu zaplanowanego.
+- **Zaplanuj / Zmień termin**: formularz podpowiada obecny termin. W kalendarzu możesz też przeciągnąć wpis na inny dzień.
+- **Edytuj wpis**: zaplanowany wpis zachowuje termin, a nowa treść zostanie opublikowana o tej godzinie. Edycja innego wpisu przywraca go do szkiców.
+- **Zatwierdź treść / Anuluj**.
+
+Publikacja i zaplanowanie w panelu zatwierdzają tę wersję treści, więc nie trzeba osobno klikać „Zatwierdź”. Zatwierdzenie wpisu, który czekał na akceptację z przyszłym terminem, od razu planuje go na ten termin. Przeciągnięcie w kalendarzu zmienia tylko termin i nie zatwierdza treści. Agenci nadal podlegają polityce marki.
+
 ## 5. WordPress
 
 1. Witryna musi działać pod HTTPS i udostępniać `/wp-json/`.
@@ -101,7 +110,7 @@ https://TWOJA-DOMENA/api/connect/facebook/callback
 
 W MCPLinker → Ustawienia → Konfiguruj OAuth zapisz App ID, App Secret i przyznane zakresy. Przykładowe zakresy funkcjonalne: `pages_show_list`, `pages_read_engagement`, `pages_manage_posts`, `pages_manage_engagement`, `read_insights`. Nie dodawaj uprawnień, których Meta nie przyznała Twojej aplikacji.
 
-Następnie w Połączonych kontach wybierz markę i „Połącz przez Facebook OAuth”. W ekranie Meta wybierz strony przeznaczone dla tej marki. Callback importuje do niej do 100 stron zwróconych w pierwszej odpowiedzi kont; kolejne strony można podłączyć ręcznie, używając ID strony i jej Page Access Token.
+Następnie w Połączonych kontach wybierz markę i „Połącz przez Facebook OAuth”. W ekranie Meta wybierz strony przeznaczone dla tej marki. Callback importuje do niej wszystkie wybrane strony (do 2000). Najpierw wymienia token użytkownika na długoterminowy, więc tokeny stron nie wygasają po godzinie. Strony połączone przez OAuth przed tą zmianą połącz ponownie raz, żeby otrzymały token długoterminowy.
 
 Alternatywnie wpisz w formularzu ID strony i Page Access Token. Token użytkownika nie jest zamiennikiem Page Access Token. Tokeny mogą wygasać lub tracić ważność po zmianie haseł, ról czy uprawnień. W tej wersji po utracie ważności należy odnowić połączenie.
 
