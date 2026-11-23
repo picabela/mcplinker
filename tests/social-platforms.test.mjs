@@ -6,7 +6,8 @@ import https from 'node:https';
 import {syncBuiltinESMExports} from 'node:module';
 import {encrypt} from '../lib/security.mjs';
 import {provider,publish,testConnection,removeRemote,credentialAAD} from '../lib/providers.mjs';
-import {socialPublish,validateSocialPost,mastodonAccountId} from '../lib/social-platforms.mjs';
+import {socialPublish,validateSocialPost,mastodonAccountId,reelTiming} from '../lib/social-platforms.mjs';
+import {deliver} from '../lib/actions.mjs';
 import {metaPages,providerAuthorizationUrl} from '../lib/provider-oauth.mjs';
 process.env.ENCRYPTION_KEY='ab'.repeat(32);
 const calls=[];let responses=[];
@@ -31,3 +32,34 @@ test('malformed successful transport response is uncertain',async()=>{responses=
 test('Meta pagination stays on Graph host and Instagram uses existing configuration',async()=>{let n=0;const pages=await metaPages({Authorization:'Bearer secret'},true,async url=>{const u=new URL(url);assert.equal(u.hostname,'graph.facebook.com');assert.ok(u.searchParams.get('fields').includes('instagram_business_account'));return n++?{data:[{id:'2'}]}:{data:[{id:'1'}],paging:{next:'https://evil.example.com',cursors:{after:'cursor'}}};});assert.equal(pages.length,2);const url=providerAuthorizationUrl('instagram',{client_id:'1',config_id:'22',scopes:[]},'https://app.example.com/callback','state');assert.equal(url.searchParams.get('config_id'),'22');assert.equal(url.hostname,'www.facebook.com');});
 
 test('Mastodon identities include their server and cannot cross instances',()=>{assert.equal(mastodonAccountId({...target('mastodon'),external_id:'https://mastodon.example.com/accounts/123'}),'123');assert.throws(()=>mastodonAccountId({...target('mastodon'),external_id:'https://other.example.com/accounts/123'}));});
+
+const reel={...post,payload:{video_url:'https://videos.example.com/r.mp4'}};
+const fakeGraph=replies=>{const seen=[];return{seen,req:async(_c,path,options={})=>{seen.push({path,options});const next=replies.shift();assert.ok(next,'unexpected Graph call '+path);return{data:next};}};};
+test('Instagram reels: a processing video returns pending, the next run publishes the same container',async()=>{
+ reelTiming.pollMs=0;const first=fakeGraph([{id:'55'},...Array(reelTiming.polls).fill({status_code:'IN_PROGRESS'})]);
+ assert.deepEqual(await socialPublish(target('instagram'),reel,first.req),{pending:'ig-container:55'});
+ assert.equal(first.seen[0].path,'123/media');assert.deepEqual(first.seen[0].options.body,{media_type:'REELS',video_url:'https://videos.example.com/r.mp4',caption:'Hello',share_to_feed:true});assert.ok(!first.seen.some(x=>x.path.endsWith('media_publish')));
+ const next=fakeGraph([{status_code:'FINISHED'},{id:'77'},{permalink:'https://www.instagram.com/reel/x/'}]);
+ assert.deepEqual(await socialPublish(target('instagram'),{...reel,external_id:'ig-container:55'},next.req),{external_id:'77',external_url:'https://www.instagram.com/reel/x/'});
+ assert.equal(next.seen[0].path,'55');assert.deepEqual(next.seen[1].options.body,{creation_id:'55'});
+});
+test('Instagram reels: processing errors fail, an expired container is recreated, checks are bounded',async()=>{
+ reelTiming.pollMs=0;
+ await assert.rejects(()=>socialPublish(target('instagram'),reel,fakeGraph([{id:'55'},{status_code:'ERROR'}]).req),e=>e.code==='provider_rejected');
+ const expired=fakeGraph([{status_code:'EXPIRED'},{id:'56'},{status_code:'FINISHED'},{id:'78'},{}]);
+ assert.equal((await socialPublish(target('instagram'),{...reel,external_id:'ig-container:55'},expired.req)).external_id,'78');assert.equal(expired.seen[1].path,'123/media');
+ await assert.rejects(()=>socialPublish(target('instagram'),{...reel,attempts:reelTiming.maxChecks,external_id:'ig-container:55'},fakeGraph(Array(reelTiming.polls).fill({status_code:'IN_PROGRESS'})).req),e=>e.code==='provider_rejected');
+ assert.doesNotThrow(()=>validateSocialPost(target('instagram'),reel));
+ assert.throws(()=>validateSocialPost(target('instagram'),{...reel,payload:{...reel.payload,image_urls:['https://images.example.com/a.jpg']}}));
+});
+test('the scheduler requeues a processing reel for the next minute, then publishes it',async()=>{
+ reelTiming.pollMs=0;process.env.SUPABASE_URL='https://database.example.com';process.env.SUPABASE_SERVICE_ROLE_KEY='test-only';
+ const c={...target('instagram'),id:'conn1'},row={id:'reel1',owner_id:'owner',brand_id:'brand',connection_id:'conn1',content:'Rolka',payload:{video_url:'https://videos.example.com/r.mp4'},status:'processing',lock_token:'lock1',attempts:1,approved_at:'2026-01-01T00:00:00Z'},patches=[];
+ mock.method(globalThis,'fetch',async(raw,opts={})=>{const u=new URL(raw),table=u.pathname.split('/').pop();if(table==='connections')return Response.json([c]);if(table==='brands')return Response.json([{id:'brand',owner_id:'owner',publish_policy:'automatic'}]);if(table==='audit_log')return Response.json([]);
+  if(table==='posts'&&opts.method==='PATCH'){assert.equal(u.searchParams.get('lock_token'),'eq.'+row.lock_token);const body=JSON.parse(opts.body);patches.push(body);Object.assign(row,body);return Response.json([row]);}throw Error('Unexpected '+u.href);});
+ const ctx={ownerId:'owner',scopes:['publish'],brandIds:['brand'],actor:'scheduler'};
+ reset([{id:'55'},...Array(reelTiming.polls).fill({status_code:'IN_PROGRESS'})]);
+ const queued=await deliver(ctx,{...row});assert.equal(queued.status,'scheduled');assert.equal(queued.external_id,'ig-container:55');assert.match(queued.note,/przetwarza film/);assert.ok(Date.parse(queued.scheduled_at)>Date.now()+30000);assert.equal(queued.lock_token,null);
+ Object.assign(row,{status:'processing',lock_token:'lock2',attempts:2});reset([{status_code:'FINISHED'},{id:'77'},{permalink:'https://www.instagram.com/reel/x/'}]);
+ const done=await deliver(ctx,{...row});assert.equal(done.status,'published');assert.equal(done.external_id,'77');assert.equal(calls[0].url.pathname,'/v25.0/55');assert.equal(calls.filter(x=>x.url.pathname.endsWith('/media')).length,0);
+});

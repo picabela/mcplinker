@@ -26,7 +26,7 @@ export default function Dashboard(){const[data,setData]=useState<Data>(empty),[s
   const onKey=(e:KeyboardEvent)=>{if(e.key==='Escape')close();};
   document.addEventListener('click',onClick);document.addEventListener('keydown',onKey);return()=>{document.removeEventListener('click',onClick);document.removeEventListener('keydown',onKey);};},[]);
  async function run(name:string,args:Row={}){setError('');setBusy(true);try{let result;if(demo){const change=demoMutation(name,args,dataRef.current);dataRef.current=change.next;setData(change.next);result=change.result;}else{result=await api('/api/action/'+name,args);if(!['platform_read','connection_test','diagnostics','post_list'].includes(name))await reload();}return result;}catch(e){setError((e as Error).message);throw e;}finally{setBusy(false);}}
- async function perform(name:string,args:Row={}){try{const r=await run(name,args);setToast(r.status==='approval'?'Wpis oczekuje na zatwierdzenie w panelu.':r.status==='scheduled'?'Wpis jest zaplanowany.':r.status==='published'?'Opublikowano.':'Zapisano zmiany.');return r;}catch{return null;}}
+ async function perform(name:string,args:Row={}){try{const r=await run(name,args);setToast(r.note||(r.status==='approval'?'Wpis oczekuje na zatwierdzenie w panelu.':r.status==='scheduled'?'Wpis jest zaplanowany.':r.status==='published'?'Opublikowano.':'Zapisano zmiany.'));return r;}catch{return null;}}
  const open=(kind:string,initial?:Row)=>setModal({kind,initial});
  const bname=(id:string)=>data.brand_list.find(b=>b.id===id)?.name||'Marka';
  const conn=(id:string)=>data.connection_list.find(c=>c.id===id);

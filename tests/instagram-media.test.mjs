@@ -59,3 +59,17 @@ test('Instagram download failures explain the expired link instead of a generic 
  assert.match(metaError(400,{error:{code:9004,error_subcode:2207052}}).message,/nie mógł pobrać zdjęcia/);
  assert.match(metaError(400,{error:{code:36003,error_subcode:2207009}}).message,/proporcje/);
 });
+
+const mp4=Buffer.concat([Buffer.from([0,0,0,24]),Buffer.from('ftypisom','latin1'),Buffer.alloc(64,1)]);
+test('instagram_upload_video stores the conversation video and replaces the draft photo with it',async()=>{
+ source=mp4;const p={id:randomUUID(),owner_id:owner,brand_id:brand,connection_id:ig.id,content:'Rolka',payload:{image_urls:['https://example.com/a.jpg'],alt_text:'x'},status:'draft',approved_at:null,updated_at:'2026-11-01T00:00:00.000Z',external_id:'ig-container:9'};posts.push(p);
+ const r=await execute('instagram_upload_video',{connection_id:ig.id,post_id:p.id,video:{download_url:'https://files.example.com/video-1?se=soon',file_id:'video-1'}},ctx);
+ assert.match(r.video_url,/\/object\/public\/mcplinker-video\/\d{4}-\d{2}\/[0-9a-f-]{36}\.mp4$/);assert.ok(isHosted(r.video_url));assert.equal(stored[0].type,'video/mp4');assert.match(stored[0].path,/\/object\/mcplinker-video\//);
+ assert.deepEqual(r.post.payload,{alt_text:'x',video_url:r.video_url});assert.equal(r.post.external_id,null);
+ source=Buffer.from('not a video at all, just text');await assert.rejects(()=>execute('instagram_upload_video',{connection_id:ig.id,url:'https://files.example.com/x.mp4'},ctx),e=>/MP4 albo MOV/.test(e.message));
+ await assert.rejects(()=>execute('instagram_upload_video',{connection_id:ig.id},ctx),e=>/w polu video/.test(e.message));
+});
+test('a video link in an Instagram draft is copied at once like photos',async()=>{
+ source=mp4;const r=await execute('post_create',{brand_id:brand,connection_id:ig.id,content:'Rolka',payload:{video_url:'https://sdmntprdenmarkeast.oaiusercontent.com/files/v/raw?se=2026&sig=x'},dedupe_key:'reel-copy'},ctx);
+ assert.ok(isHosted(r.payload.video_url));assert.equal(downloads.length,1);
+});
