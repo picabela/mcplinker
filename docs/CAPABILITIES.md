@@ -16,7 +16,7 @@
 
 Obsługiwane są strony, do których token ma dostęp: tekst/link, jedno lub wiele zdjęć, zwykłe wideo z publicznego URL, lista wpisów, komentarze, publiczne komentowanie własnych wpisów strony, usuwanie wpisów i odczyt przykładowej metryki Page Insights. Metryki i możliwości zależą od wersji API oraz zatwierdzonych zakresów.
 
-Nie ma obsługi prywatnych profili, grup, Messenger, Reels, Stories ani Ads Manager. Nie ma automatyzacji przeglądarki do obchodzenia ograniczeń API. OAuth pobiera pierwszą stronę listy kont (do 100); dodatkowe konta można połączyć ręcznie. Pobieranie wpisów zwraca informacje o paginacji API; panel komentarzy wyświetla pierwszą partię.
+Nie ma obsługi prywatnych profili, grup, Messenger, Reels na Facebooku, Stories ani Ads Manager. Rolki na Instagramie są obsługiwane (zob. PLATFORMS.md). Nie ma automatyzacji przeglądarki do obchodzenia ograniczeń API. OAuth pobiera pierwszą stronę listy kont (do 100); dodatkowe konta można połączyć ręcznie. Pobieranie wpisów zwraca informacje o paginacji API; panel komentarzy wyświetla pierwszą partię.
 
 ## LinkedIn
 
