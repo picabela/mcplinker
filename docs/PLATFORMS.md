@@ -20,7 +20,9 @@ Integracje nie wymagają wykupienia abonamentu API w MCPLinker. Nadal obowiązuj
 6. Facebook Login for Business → Ustawienia → Valid OAuth Redirect URIs: dodaj **https://mcplinker.vercel.app/api/connect/instagram/callback**. Zachowaj istniejący adres Facebook callback.
 7. MCPLinker → Konta → Połącz konto → wybierz markę i Instagram → **Połącz przez Instagram**. W oknie Meta przyznaj dostęp do właściwych stron/kont.
 8. Instagram używa zapisanych już danych aplikacji Facebook / Meta. Nie potrzebujesz nowej aplikacji deweloperskiej dla każdej marki.
-9. Publikacja: wpisz opis i w Media i opcje platformy ustaw `{"image_urls":["https://twoja-domena.pl/obraz.jpg"]}`. Plik JPEG musi być publicznie dostępny dla Meta. Potem zapisz szkic i zaplanuj lub opublikuj. Maksymalny opis wraz z linkiem: 2200 znaków.
+9. Publikacja: zdjęcie dodaje agent narzędziem `instagram_upload_image` z plikiem z rozmowy w polu `image` (ChatGPT) albo z publicznym `url`. Możesz też w panelu wpisać w Media i opcje platformy `{"image_urls":["https://twoja-domena.pl/obraz.jpg"]}`. Potem zapisz szkic i zaplanuj lub opublikuj. Maksymalny opis wraz z linkiem: 2200 znaków.
+
+Instagram pobiera zdjęcie dopiero w chwili publikacji i przyjmuje tylko JPEG o proporcjach od 4:5 do 1.91:1. Dlatego MCPLinker przy zapisie szkicu od razu pobiera każde zdjęcie Instagrama: z narzędzia albo z `image_urls`. Konwertuje je do JPEG, a zdjęcie o innych proporcjach umieszcza na rozmytym tle zamiast je przycinać. Kopię zapisuje w publicznym koszyku Supabase Storage `mcplinker-media`, który powstaje automatycznie przy pierwszym użyciu, pod losową nazwą pliku. Tymczasowy link z rozmowy (wygasa po kilku minutach) nie trafia więc do Instagrama. Rolki i filmy na Instagram nie są jeszcze obsługiwane.
 
 Jeżeli obraz długo się przetwarza, aplikacja nie wyśle polecenia publikacji i pokaże komunikat do ponowienia później. Jeżeli wynik wysłanej publikacji jest niepewny, najpierw sprawdź Instagram — aplikacja nie ponawia jej automatycznie.
 
