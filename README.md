@@ -20,7 +20,7 @@ Panel w języku polskim i zdalny serwer MCP do pracy z wieloma markami, stronami
 
 ## Uruchomienie
 
-Pełna instrukcja: **[docs/SETUP.md](docs/SETUP.md)**. Zakres integracji i ograniczenia: **[docs/CAPABILITIES.md](docs/CAPABILITIES.md)**. Projekt i model bezpieczeństwa: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+Pełna instrukcja: **[docs/SETUP.md](docs/SETUP.md)** (Vercel + Supabase) albo **[docs/VPS.md](docs/VPS.md)** (własny serwer: Coolify + PostgreSQL, bez Supabase). Zakres integracji i ograniczenia: **[docs/CAPABILITIES.md](docs/CAPABILITIES.md)**. Projekt i model bezpieczeństwa: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
 
 ```bash
 npm ci
