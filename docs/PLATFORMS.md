@@ -4,11 +4,11 @@
 
 | Platforma | Nowa obsługa | Co podłączyć |
 | --- | --- | --- |
-| Instagram | Jedno zdjęcie albo rolka (film) z opisem, planowanie, odczyt ostatnich publikacji i liczników konta | Profesjonalne konto firmy lub twórcy, połączone ze stroną Facebook |
+| Instagram | Zdjęcie, karuzela (2–10 zdjęć), rolka (film) z własną okładką i relacja (Stories) ze zdjęciem albo filmem; planowanie, odczyt ostatnich publikacji i liczników konta | Profesjonalne konto firmy lub twórcy, połączone ze stroną Facebook |
 | Telegram | Tekst lub jeden obraz z opisem, planowanie, usuwanie wysłanych wiadomości w granicach API, liczba członków | Bot jako administrator kanału lub grupy |
 | Mastodon | Tekst z linkiem do 500 znaków, planowanie, odczyt wpisów i profilu, odpowiedzi pod własnymi wpisami, usuwanie własnych wpisów | Konto na serwerze Mastodon i token aplikacji |
 
-Integracje nie wymagają wykupienia abonamentu API w MCPLinker. Nadal obowiązują limity dostawców, wymagane zgody oraz koszty hostingu aplikacji i ewentualnie serwera Mastodon. Telegram wysyłany jest z `allow_paid_broadcast: false`. Instagram nie obejmuje jeszcze Stories, karuzel, komentarzy ani usuwania. Mastodon nie obejmuje jeszcze załączników. Telegram Bot API nie zwraca historii kanału: wysłane przez aplikację wpisy są widoczne w Publikacjach MCPLinker.
+Integracje nie wymagają wykupienia abonamentu API w MCPLinker. Nadal obowiązują limity dostawców, wymagane zgody oraz koszty hostingu aplikacji i ewentualnie serwera Mastodon. Telegram wysyłany jest z `allow_paid_broadcast: false`. Instagram nie obejmuje jeszcze komentarzy, usuwania, oznaczeń osób ani karuzel z filmami. Mastodon nie obejmuje jeszcze załączników. Telegram Bot API nie zwraca historii kanału: wysłane przez aplikację wpisy są widoczne w Publikacjach MCPLinker.
 
 ## Instagram krok po kroku
 
@@ -23,6 +23,12 @@ Integracje nie wymagają wykupienia abonamentu API w MCPLinker. Nadal obowiązuj
 9. Publikacja: zdjęcie dodaje agent narzędziem `instagram_upload_image` z plikiem z rozmowy w polu `image` (ChatGPT) albo z publicznym `url`. Możesz też w panelu wpisać w Media i opcje platformy `{"image_urls":["https://twoja-domena.pl/obraz.jpg"]}`. Potem zapisz szkic i zaplanuj lub opublikuj. Maksymalny opis wraz z linkiem: 2200 znaków.
 
 Instagram pobiera zdjęcie dopiero w chwili publikacji i przyjmuje tylko JPEG o proporcjach od 4:5 do 1.91:1. Dlatego MCPLinker przy zapisie szkicu od razu pobiera każde zdjęcie Instagrama: z narzędzia albo z `image_urls`. Konwertuje je do JPEG, a zdjęcie o innych proporcjach umieszcza na rozmytym tle zamiast je przycinać. Kopię zapisuje w publicznym koszyku Supabase Storage `mcplinker-media`, który powstaje automatycznie przy pierwszym użyciu, pod losową nazwą pliku. Tymczasowy link z rozmowy (wygasa po kilku minutach) nie trafia więc do Instagrama. Rolki: agent wgrywa film narzędziem `instagram_upload_video` z plikiem z rozmowy w polu `video` albo z publicznym `url`. Obsługiwane są MP4 i MOV (H.264, AAC), najlepiej pionowe 9:16, od 3 s do 15 min. Film trafia do publicznego koszyka Supabase Storage `mcplinker-video`, który tworzy się sam. Limit rozmiaru pliku wynika z planu Supabase (Free: 50 MB). Rolka pojawia się też w siatce profilu.
+
+Karuzela to od 2 do 10 zdjęć w `payload.image_urls`, publikowanych jako jeden wpis z jednym opisem. Agent dodaje kolejne zdjęcia narzędziem `instagram_upload_image` z `append: true`. Najlepiej przygotować wszystkie zdjęcia karuzeli w jednym formacie (np. 4:5). Karuzela liczy się jako jeden wpis w dobowym limicie Instagrama (50 publikacji).
+
+Relacja (Stories) to `payload.story: true` z jednym zdjęciem albo jednym filmem. Meta pozwala publikować relacje przez API tylko kontom firmowym (Business); konto twórcy (Creator) może publikować zdjęcia, karuzele i rolki, ale nie relacje. Opis wpisu nie jest widoczny w relacji, a relacja znika po 24 godzinach. Zdjęcie relacji zachowuje proporcje 9:16 (agent wgrywa je przez `instagram_upload_image` z `purpose: "story"`). Film relacji wgrywa `instagram_upload_video` z `story: true` i jest publikowany dwuetapowo jak rolka.
+
+Okładka rolki: obraz (najlepiej 9:16) wgrany przez `instagram_upload_image` z `purpose: "cover"` trafia do `payload.cover_url`. Zamiast obrazu można wskazać klatkę filmu: `payload.thumb_offset` w milisekundach od początku. Bez żadnego z tych pól Instagram wybiera okładkę sam.
 
 Publikacja rolki przebiega dwuetapowo, bo Instagram przetwarza film po wysłaniu, zwykle od kilkudziesięciu sekund do kilku minut. MCPLinker wysyła film i czeka do około 20 sekund. Jeśli film nie jest jeszcze gotowy, wpis wraca na minutę do zaplanowanych i harmonogram sprawdza go ponownie. Rolka zostaje opublikowana automatycznie, gdy Instagram skończy przetwarzanie. Wymaga to działającego harmonogramu (Supabase Cron co minutę). Po około 30 minutach bez gotowego filmu wpis kończy się błędem.
 
