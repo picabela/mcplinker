@@ -13,8 +13,8 @@ const size=async bytes=>{const m=await sharp(bytes).metadata();return{format:m.f
 
 const owner=randomUUID(),brand=randomUUID(),ig={id:randomUUID(),owner_id:owner,brand_id:brand,platform:'instagram',external_id:'17841'};
 const ctx={ownerId:owner,actor:'oauth_grants:agent',brandIds:[brand],scopes:['draft']};
-let posts,stored,bucketExists,downloads,source;
-beforeEach(()=>{posts=[];stored=[];bucketExists=true;downloads=[];});
+let posts,stored,bucketExists,downloads,source,account;
+beforeEach(()=>{posts=[];stored=[];bucketExists=true;downloads=[];account=ig;});
 mock.method(dns,'lookup',async()=>[{address:'8.8.8.8',family:4}]);syncBuiltinESMExports();
 mock.method(https,'request',(url,options,cb)=>{const req=new EventEmitter();req.write=()=>{};req.end=()=>{downloads.push(new URL(url).href);const res=new EventEmitter();res.statusCode=200;res.headers={};queueMicrotask(()=>{cb(res);res.emit('data',source);res.emit('end');});};return req;});
 mock.method(globalThis,'fetch',async(raw,opts={})=>{const u=new URL(raw);
@@ -23,7 +23,7 @@ mock.method(globalThis,'fetch',async(raw,opts={})=>{const u=new URL(raw);
   if(!bucketExists)return Response.json({statusCode:'404',error:'Bucket not found',message:'Bucket not found'},{status:400});
   stored.push({path:u.pathname,type:new Headers(opts.headers).get('content-type'),body:Buffer.from(opts.body)});return Response.json({Key:u.pathname});}
  const table=u.pathname.split('/').pop();
- if(table==='brands')return Response.json([{id:brand,owner_id:owner}]);if(table==='connections')return Response.json([ig]);if(table==='audit_log')return Response.json([]);
+ if(table==='brands')return Response.json([{id:brand,owner_id:owner}]);if(table==='connections')return Response.json([account]);if(table==='audit_log')return Response.json([]);
  if(table==='posts'){if(opts.method==='POST'){const row={id:randomUUID(),status:'draft',approved_at:null,updated_at:'2026-11-01T00:00:00.000Z',...JSON.parse(opts.body)};posts.push(row);return Response.json([row]);}
   const id=u.searchParams.get('id')?.slice(3),key=u.searchParams.get('dedupe_key')?.slice(3),rows=posts.filter(p=>(!id||p.id===id)&&(!key||p.dedupe_key===key));
   if(opts.method==='PATCH'){rows.forEach(p=>Object.assign(p,JSON.parse(opts.body)));}return Response.json(rows);}
@@ -72,4 +72,19 @@ test('instagram_upload_video stores the conversation video and replaces the draf
 test('a video link in an Instagram draft is copied at once like photos',async()=>{
  source=mp4;const r=await execute('post_create',{brand_id:brand,connection_id:ig.id,content:'Rolka',payload:{video_url:'https://sdmntprdenmarkeast.oaiusercontent.com/files/v/raw?se=2026&sig=x'},dedupe_key:'reel-copy'},ctx);
  assert.ok(isHosted(r.payload.video_url));assert.equal(downloads.length,1);
+});
+
+test('stories and covers keep 9:16; append builds a carousel; story fields are Instagram-only',async()=>{
+ const tall=await image(540,960,'jpeg');assert.equal((await instagramJpeg(tall,{fit:false})).bytes,tall);
+ source=await image(540,960);const p={id:randomUUID(),owner_id:owner,brand_id:brand,connection_id:ig.id,content:'Opis',payload:{image_urls:['https://example.com/a.jpg']},status:'draft',approved_at:null,updated_at:'2026-11-01T00:00:00.000Z'};posts.push(p);
+ const one=await execute('instagram_upload_image',{connection_id:ig.id,post_id:p.id,url:'https://files.example.com/1.png',append:true},ctx);assert.equal(one.post.payload.image_urls.length,2);assert.match(one.note,/Karuzela ma teraz 2/);
+ const story=await execute('instagram_upload_image',{connection_id:ig.id,post_id:p.id,url:'https://files.example.com/2.png',purpose:'story'},ctx);assert.equal(story.post.payload.story,true);assert.deepEqual(story.post.payload.image_urls,[story.image_url]);
+ assert.ok(Math.abs((await size(stored.at(-1).body)).ratio-0.5625)<0.01);
+ const cover=await execute('instagram_upload_image',{connection_id:ig.id,post_id:p.id,url:'https://files.example.com/3.png',purpose:'cover'},ctx);assert.equal(cover.post.payload.cover_url,cover.image_url);assert.ok(Math.abs((await size(stored.at(-1).body)).ratio-0.5625)<0.01);
+ await assert.rejects(()=>execute('instagram_upload_image',{connection_id:ig.id,post_id:p.id,url:'https://files.example.com/4.png',purpose:'cover',append:true},ctx),e=>/append/.test(e.message));
+ await assert.rejects(()=>execute('instagram_upload_image',{connection_id:ig.id,post_id:p.id,url:'https://files.example.com/4.png',append:true},ctx),e=>/Relacja ma jedno/.test(e.message));
+ const back=await execute('instagram_upload_image',{connection_id:ig.id,post_id:p.id,url:'https://files.example.com/4.png',purpose:'post'},ctx);assert.equal(back.post.payload.story,undefined);assert.equal(back.post.payload.cover_url,undefined);
+ const story2=await execute('post_create',{brand_id:brand,connection_id:ig.id,content:'Relacja',payload:{story:true,image_urls:['https://files.example.com/5.png']},dedupe_key:'story-fit'},ctx);assert.ok(isHosted(story2.payload.image_urls[0]));assert.ok(Math.abs((await size(stored.at(-1).body)).ratio-0.5625)<0.01);
+ account={...ig,id:randomUUID(),platform:'facebook'};
+ await assert.rejects(()=>execute('post_create',{brand_id:brand,connection_id:account.id,content:'FB',payload:{story:true},dedupe_key:'fb-story'},ctx),e=>/tylko Instagrama/.test(e.message));
 });

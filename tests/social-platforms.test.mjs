@@ -63,3 +63,29 @@ test('the scheduler requeues a processing reel for the next minute, then publish
  Object.assign(row,{status:'processing',lock_token:'lock2',attempts:2});reset([{status_code:'FINISHED'},{id:'77'},{permalink:'https://www.instagram.com/reel/x/'}]);
  const done=await deliver(ctx,{...row});assert.equal(done.status,'published');assert.equal(done.external_id,'77');assert.equal(calls[0].url.pathname,'/v25.0/55');assert.equal(calls.filter(x=>x.url.pathname.endsWith('/media')).length,0);
 });
+
+test('Instagram carousel: item containers first, then one CAROUSEL parent with the caption',async()=>{
+ const g=fakeGraph([{id:'11'},{status_code:'FINISHED'},{id:'12'},{status_code:'FINISHED'},{id:'20'},{status_code:'FINISHED'},{id:'30'},{permalink:'https://www.instagram.com/p/c/'}]);
+ const r=await socialPublish(target('instagram'),{...post,payload:{image_urls:['https://images.example.com/1.jpg','https://images.example.com/2.jpg']}},g.req,async()=>{});
+ assert.deepEqual(r,{external_id:'30',external_url:'https://www.instagram.com/p/c/'});
+ assert.deepEqual(g.seen[0].options.body,{image_url:'https://images.example.com/1.jpg',is_carousel_item:true});assert.deepEqual(g.seen[2].options.body,{image_url:'https://images.example.com/2.jpg',is_carousel_item:true});
+ assert.deepEqual(g.seen[4].options.body,{media_type:'CAROUSEL',children:'11,12',caption:'Hello'});assert.deepEqual(g.seen[6].options.body,{creation_id:'20'});
+});
+test('Instagram stories: image and video stories carry no caption; reels can carry a cover',async()=>{
+ reelTiming.pollMs=0;
+ const image=fakeGraph([{id:'40'},{status_code:'FINISHED'},{id:'41'},{}]);await socialPublish(target('instagram'),{...post,payload:{story:true,image_urls:['https://images.example.com/s.jpg']}},image.req,async()=>{});
+ assert.deepEqual(image.seen[0].options.body,{media_type:'STORIES',image_url:'https://images.example.com/s.jpg'});
+ const video=fakeGraph([{id:'42'},...Array(reelTiming.polls).fill({status_code:'IN_PROGRESS'})]);assert.deepEqual(await socialPublish(target('instagram'),{...post,payload:{story:true,video_url:'https://videos.example.com/s.mp4'}},video.req),{pending:'ig-container:42'});
+ assert.deepEqual(video.seen[0].options.body,{media_type:'STORIES',video_url:'https://videos.example.com/s.mp4'});
+ const cover=fakeGraph([{id:'43'},{status_code:'FINISHED'},{id:'44'},{}]);await socialPublish(target('instagram'),{...reel,payload:{...reel.payload,cover_url:'https://images.example.com/c.jpg',thumb_offset:1500}},cover.req);
+ assert.equal(cover.seen[0].options.body.cover_url,'https://images.example.com/c.jpg');assert.equal(cover.seen[0].options.body.thumb_offset,1500);assert.equal(cover.seen[0].options.body.media_type,'REELS');
+});
+test('Instagram preflight: story takes one medium and no cover; covers only on reels',()=>{
+ const ig=target('instagram'),img='https://images.example.com/a.jpg';
+ assert.throws(()=>validateSocialPost(ig,{...post,payload:{story:true,image_urls:[img,img]}}));
+ assert.throws(()=>validateSocialPost(ig,{...post,payload:{story:true,video_url:'https://videos.example.com/s.mp4',thumb_offset:0}}));
+ assert.throws(()=>validateSocialPost(ig,{...post,payload:{image_urls:[img],cover_url:img}}));
+ assert.throws(()=>validateSocialPost(ig,{...post,payload:{image_urls:[img],video_url:'https://videos.example.com/s.mp4'}}));
+ assert.doesNotThrow(()=>validateSocialPost(ig,{...post,payload:{image_urls:Array(10).fill(img)}}));
+ assert.doesNotThrow(()=>validateSocialPost(ig,{...post,content:'x'.repeat(3000),payload:{story:true,image_urls:[img]}}));
+});

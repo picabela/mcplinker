@@ -46,7 +46,7 @@ Startowe `vercel.json` uruchamia `/api/cron` **raz dziennie o 06:00 UTC**. Zapla
 
 ## Rzeczywisty zakres
 
-To działająca implementacja funkcji wymienionych powyżej, wymagająca konfiguracji i odbioru na realnych kontach. Nie jest pełną kopią Metricool. Reels na Facebooku, Stories, reklamy, prywatne wiadomości, grupy Facebook i zaproszenia LinkedIn nie są zaimplementowane. Zdjęcia i rolki na Instagramie są obsługiwane. Nie ma automatycznego obchodzenia limitów, App Review ani zgód platform. Aplikacja nie uruchamia samodzielnie modelu AI — treść opracowuje ChatGPT przez MCP, a reguły serwera używają szablonów.
+To działająca implementacja funkcji wymienionych powyżej, wymagająca konfiguracji i odbioru na realnych kontach. Nie jest pełną kopią Metricool. Reels i Stories na Facebooku, reklamy, prywatne wiadomości, grupy Facebook i zaproszenia LinkedIn nie są zaimplementowane. Na Instagramie obsługiwane są zdjęcia, karuzele, rolki z okładką i relacje. Nie ma automatycznego obchodzenia limitów, App Review ani zgód platform. Aplikacja nie uruchamia samodzielnie modelu AI — treść opracowuje ChatGPT przez MCP, a reguły serwera używają szablonów.
 
 Panel ma jednego właściciela wskazanego przez `APP_OWNER_EMAIL`; marki i agenci są rozdzieleni uprawnieniami. Role wielu użytkowników nie są częścią tej wersji.
 

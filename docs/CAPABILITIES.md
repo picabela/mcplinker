@@ -16,7 +16,7 @@
 
 Obsługiwane są strony, do których token ma dostęp: tekst/link, jedno lub wiele zdjęć, zwykłe wideo z publicznego URL, lista wpisów, komentarze, publiczne komentowanie własnych wpisów strony, usuwanie wpisów i odczyt przykładowej metryki Page Insights. Metryki i możliwości zależą od wersji API oraz zatwierdzonych zakresów.
 
-Nie ma obsługi prywatnych profili, grup, Messenger, Reels na Facebooku, Stories ani Ads Manager. Rolki na Instagramie są obsługiwane (zob. PLATFORMS.md). Nie ma automatyzacji przeglądarki do obchodzenia ograniczeń API. OAuth pobiera pierwszą stronę listy kont (do 100); dodatkowe konta można połączyć ręcznie. Pobieranie wpisów zwraca informacje o paginacji API; panel komentarzy wyświetla pierwszą partię.
+Nie ma obsługi prywatnych profili, grup, Messenger, Reels ani Stories na Facebooku ani Ads Manager. Na Instagramie obsługiwane są zdjęcia, karuzele, rolki z okładką i relacje (zob. PLATFORMS.md). Nie ma automatyzacji przeglądarki do obchodzenia ograniczeń API. OAuth pobiera pierwszą stronę listy kont (do 100); dodatkowe konta można połączyć ręcznie. Pobieranie wpisów zwraca informacje o paginacji API; panel komentarzy wyświetla pierwszą partię.
 
 ## LinkedIn
 
@@ -43,7 +43,7 @@ Startowy worker uruchamia się raz dziennie. Dokładniejszy harmonogram i więks
 3. Automatyczna rotacja tokenów platform oraz alerty przed utratą dostępu.
 4. Historia metryk, raporty marek, rekomendacje pór publikacji i porównywanie treści.
 5. Role zespołowe: autor, recenzent, administrator; powiadomienia o szkicach do akceptacji.
-6. Dodatkowe adaptery dla zatwierdzonych produktów Meta i LinkedIn, w tym Reels/Stories, jeśli konto i API je udostępniają.
+6. Dodatkowe adaptery dla zatwierdzonych produktów Meta i LinkedIn, w tym Reels/Stories na Facebooku, jeśli konto i API je udostępniają.
 7. Integracje GA4/GSC, weryfikacja i porównywanie wyników SEO.
 8. Harmonogram pracy agentów z generowaniem treści, kosztami modelu i wyraźnymi zasadami publikowania.
 
