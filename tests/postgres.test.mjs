@@ -144,3 +144,24 @@ test('import copies a Supabase deployment: drafts instead of schedules, files re
   assert.equal((await authRequest('token?grant_type=password',{email:'owner@example.com',password:'old password'})).user.id,sourceOwner);
  }finally{delete process.env.SOURCE_SUPABASE_URL;delete process.env.SOURCE_SUPABASE_SERVICE_ROLE_KEY;}
 });
+
+test('APP_OWNER_PASSWORD sets the owner password at startup and /api/status reports the owner account',{skip},async()=>{
+ const {ensureOwnerPassword,ownerStatus}=await import('../lib/local-auth.mjs');
+ const login=password=>authRequest('token?grant_type=password',{email:'owner@example.com',password});
+ try{
+  delete process.env.APP_OWNER_PASSWORD;assert.equal(await ensureOwnerPassword(),'not_configured');
+  process.env.APP_OWNER_PASSWORD='short';assert.equal(await ensureOwnerPassword(),'too_short');
+  process.env.APP_OWNER_PASSWORD='a brand new owner password';
+  assert.equal(await ensureOwnerPassword(),'updated');assert.equal(await ensureOwnerPassword(),'unchanged');
+  assert.equal((await login('a brand new owner password')).user.email,'owner@example.com');
+  await assert.rejects(()=>login('old password'),e=>e.status===401);
+  assert.deepEqual(await ownerStatus(),{account:true,password:true,accounts:1});
+  const status=await (await handleApi(new Request('https://app.example.com/api/status'))).json();assert.deepEqual(status.owner,{account:true,password:true,accounts:1});
+  // A missing owner account is created only when no copy from Supabase is configured.
+  process.env.APP_OWNER_EMAIL='new-owner@example.com';
+  process.env.SOURCE_SUPABASE_URL='https://src.supabase.co';assert.equal(await ensureOwnerPassword(),'waiting_for_import');delete process.env.SOURCE_SUPABASE_URL;
+  assert.deepEqual(await ownerStatus(),{account:false,password:false,accounts:1});
+  assert.equal(await ensureOwnerPassword(),'created');
+  assert.equal((await authRequest('token?grant_type=password',{email:'NEW-owner@example.com',password:'a brand new owner password'})).user.email,'new-owner@example.com');
+ }finally{process.env.APP_OWNER_EMAIL='owner@example.com';delete process.env.APP_OWNER_PASSWORD;}
+});

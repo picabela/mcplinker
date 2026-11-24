@@ -27,6 +27,7 @@ Pliki są w bazie, więc jedna kopia bazy obejmuje wszystkie dane. Limit pliku: 
 | `DATABASE_URL` | wewnętrzny adres bazy z Coolify |
 | `ENCRYPTION_KEY` | **ten sam co w dotychczasowej instalacji**, inaczej zapisane tokeny Facebooka, Instagrama i WordPressa nie dadzą się odczytać |
 | `CRON_SECRET` | nowy losowy sekret (używany tylko przez `/api/cron`) |
+| `APP_OWNER_PASSWORD` | opcjonalnie: hasło właściciela w tej instalacji (min. 12 znaków), ustawiane przy starcie; niezależne od poprzedniego Supabase |
 | `META_API_VERSION`, `LINKEDIN_API_VERSION`, `MCP_ALLOWED_REDIRECT_URIS`, `WORDPRESS_ALLOWED_HOSTS` | jak w dotychczasowej instalacji, jeśli były ustawione |
 | `SOURCE_SUPABASE_URL` | adres poprzedniego projektu Supabase (tylko do kopiowania danych) |
 | `SOURCE_SUPABASE_SERVICE_ROLE_KEY` | Secret key poprzedniego projektu (Supabase → Project Settings → API Keys) |
@@ -46,6 +47,8 @@ Przy pierwszym starcie z pustą bazą i ustawionymi `SOURCE_SUPABASE_*` aplikacj
 Tryb **kopia** (domyślny, `IMPORT_MODE=copy`): stara instalacja dalej publikuje, więc w kopii zaplanowane i oczekujące wpisy stają się szkicami, a automatyzacje są wyłączone. Nic nie wyjdzie dwa razy.
 
 Hasło: Supabase nie udostępnia haseł. Przy pierwszym logowaniu nowa instalacja sprawdza hasło w poprzednim projekcie i zapisuje je lokalnie. Zaloguj się więc raz, zanim wyłączysz poprzedni projekt Supabase. Gdy ustawione jest `SOURCE_SUPABASE_URL`, rejestracja nowego konta jest wyłączona: konto właściciela pochodzi z kopii.
+
+Hasło można też ustawić zmienną `APP_OWNER_PASSWORD` (najwygodniej przez VPS Manager → Sekrety). Aplikacja zapisuje je przy starcie i po kopiowaniu danych. `GET /api/status` pokazuje w polu `owner`, czy konto właściciela (`APP_OWNER_EMAIL`) istnieje i ma hasło.
 
 Bez kopiowania (nowa, pusta instalacja) konto właściciela zakłada pierwsza rejestracja adresem `APP_OWNER_EMAIL`; kolejne rejestracje są odrzucane. Załóż je od razu po pierwszym wdrożeniu.
 
